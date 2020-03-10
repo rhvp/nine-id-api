@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
-mongoose.connect(`mongodb+srv://sody-boy:${process.env.MONGO_ATLAS_PASSWORD}@my-cluster-01-a0hk3.mongodb.net/nine-id-test?retryWrites=true&w=majority`, {useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true}).then(()=>{
+mongoose.connect(process.env.MONGO_ATLAS_URL, {useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true}).then(()=>{
     console.log('MongoDB connected')
 }).catch(err=>{
-    console.error('Error:',err)
+    console.error('Error:',err.name,err.message);
 })
 
 module.exports = mongoose.connection;
