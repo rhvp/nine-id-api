@@ -8,6 +8,9 @@ router.route('/verify/:phone')
 router.route('/signup')
     .post(userController.signup_User)
 
+router.route('/login')
+    .post(userController.login_user)
+
 router.route('/confirm/:token')
     .get(userController.confirm_User)
 

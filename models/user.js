@@ -32,7 +32,7 @@ const userSchema = new mongoose.Schema({
         enum: ['inactive', 'active', 'level A', 'level B', 'level C'],
         default: 'inactive'
     }
-})
+}, {timestamps: true})
 
 const User = mongoose.model('user', userSchema);
 
