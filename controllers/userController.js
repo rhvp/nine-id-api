@@ -102,7 +102,6 @@ module.exports = {
     },
     login_user: async(req, res, next)=>{
         const user = await User.findOne({email: req.body.email});
-        console.log(user)
         if(!user){
             return next(new AppError('User with provided email does not exist', 404))
         }
