@@ -14,4 +14,7 @@ router.route('/login')
 router.route('/confirm/:token')
     .get(userController.confirm_User)
 
+router.route('/confirm/resend/:id')
+    .get(userController.resend_Email_Confirmation)
+
 module.exports = router;

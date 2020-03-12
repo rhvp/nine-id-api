@@ -22,6 +22,13 @@ app.use((err, req, res, next)=>{
             }
         });
     } else if (process.env.NODE_ENV === 'production') {
+        if(err.isOperational) {
+            res.status(err.statusCode).json({
+                error: {
+                    message: err.message
+                }
+            })
+        }
         res.status(err.statusCode || 500).json({
             error: {
                 message: "Something went wrong in the server"
