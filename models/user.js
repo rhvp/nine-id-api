@@ -17,8 +17,26 @@ const userSchema = new mongoose.Schema({
     },
     phone: {
         type: String,
-        required: [true, 'Please enter your surname'],
+        required: [true, 'Please enter your phone number'],
         unique: true
+    },
+    business_Name: {
+        type: String
+    },
+    business_Category: {
+        type: String
+    },
+    business_Logo: {
+        type: String
+    },
+    business_ID: {
+        type: String
+    },
+    business_address: {
+        type: String
+    },
+    webAddress:{
+        type: String
     },
     password: {
         type: String
@@ -31,6 +49,20 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['inactive', 'active', 'level A', 'level B', 'level C'],
         default: 'inactive'
+    },
+    social_Media: {
+        instagram: {
+            type: String
+        },
+        facebook: {
+            type: String
+        },
+        twitter: {
+            type: String
+        },
+        linkedin: {
+            type: String
+        }
     }
 }, {timestamps: true})
 

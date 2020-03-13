@@ -1,6 +1,7 @@
 const express = require('express');
 const user_Routes = require('./routes/user-routes');
 const AppError = require('./config/appError');
+const errorHandler = require('./controllers/errorController');
 
 const app = express();
 
@@ -13,28 +14,6 @@ app.use((req, res, next)=>{
     next(err);
 });
 
-app.use((err, req, res, next)=>{
-    console.error(err.message, err.stack);
-    if(process.env.NODE_ENV === 'development') {
-        res.status(err.statusCode || 500).json({
-            error: {
-                message: err.message
-            }
-        });
-    } else if (process.env.NODE_ENV === 'production') {
-        if(err.isOperational) {
-            res.status(err.statusCode).json({
-                error: {
-                    message: err.message
-                }
-            })
-        }
-        res.status(err.statusCode || 500).json({
-            error: {
-                message: "Something went wrong in the server"
-            }
-        });
-    }
-});
+app.use(errorHandler);
 
 module.exports = app;
