@@ -3,7 +3,7 @@ const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const sendMail = require('../config/nodemailer');
 const AppError = require('../config/appError');
-const bcrypt =  require('bcrypt');
+const bcrypt =  require('bcryptjs');
 const crypto = require('crypto-random-string');
 
 

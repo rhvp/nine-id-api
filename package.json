@@ -10,9 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.19.2",
-    "bcrypt": "^4.0.1",
+    "bcryptjs": "^2.4.3",
     "crypto-random-string": "^3.2.0",
-    "dot-env": "0.0.1",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
@@ -25,7 +24,7 @@
   "devDependencies": {
     "nodemon": "^2.0.2"
   },
-  "engines":{
+  "engines": {
     "node": "12.16.1"
   }
 }
