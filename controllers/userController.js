@@ -60,7 +60,7 @@ module.exports = {
                 if(err){
                     return next(new AppError(err.message, 500));
                 }
-                const url = `https://9id.now.sh/verify?${token.token}`;
+                const url = `https://9id.now.sh/verify?token=${token.token}`;
 
 
                 // Send Confirmation Email
@@ -69,7 +69,7 @@ module.exports = {
                     email: newUser.email,
                     replyTo: 'no-reply-9id@gmail.com',
                     subject: 'Email Confirmation',
-                    message: `<p>Please follow the <a href="${url}">link</a> to verify your email.</p>`
+                    message: url
                 }).then(()=>{
                     res.status(201).json({
                         status: 'success',
@@ -96,14 +96,14 @@ module.exports = {
         if(!user.confirmed) {
             // const token = signToken(user._id);
             const token = await Token.findOne({user_ID:user._id});
-            const url = `https://9id.now.sh/verify?${token.token}`
+            const url = `https://9id.now.sh/verify?token=${token.token}`
 
             sendMail({
                 from: '9 ID <no-reply-9id@gmail.com>',
                 email: user.email,
                 replyTo: 'no-reply-9id@gmail.com',
                 subject: 'Email Confirmation',
-                message: `<p>Please follow the <a href="${url}">link</a> to verify your email.</p>`
+                message: url
             }).then(()=>res.status(200).json({status:'success',message:'confirmation mail resent'})).catch(err=>{
                 console.error('Error:', err);
                 return next(new AppError(err.message, 500));
