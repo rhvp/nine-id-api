@@ -2,7 +2,6 @@ const nodemailer = require('nodemailer');
 const AppError = require('./appError');
 
 const sendEmail = async options => {
-    try {
         // 1) Create a transporter
     const transporter = nodemailer.createTransport({
           host: 'smtp.gmail.com',
@@ -30,11 +29,7 @@ const sendEmail = async options => {
       
         // 3) Actually send the email
         await transporter.sendMail(mailOptions);
-    } catch(err) {
-        console.error('Error sending email:', err);
-        return new AppError('There was an error sending the mail', 501);
     }
-    
-  };
+  ;
   
   module.exports = sendEmail;

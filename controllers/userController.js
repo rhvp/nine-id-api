@@ -5,11 +5,9 @@ const sendMail = require('../config/nodemailer');
 const AppError = require('../config/appError');
 const bcrypt =  require('bcryptjs');
 const crypto = require('crypto-random-string');
+const Token = require('../models/token');
 
 
-const signToken = id => {
-    return jwt.sign({id}, process.env.JWT_SECRET, {expiresIn: '2h'});
-}
 module.exports = {
 
     verify_User_SIM: async(req, res, next)=>{
@@ -56,33 +54,49 @@ module.exports = {
             
             // Create User
             const newUser = await User.create(userData);
-            const token = signToken(newUser._id);
-            const url = `https://9id.now.sh/verify?${token}`;
+            // const token = signToken(newUser._id);
+            const token = new Token({user_ID: newUser._id, token: crypto({length: 16, type: 'base64'})});
+            token.save(err=>{
+                if(err){
+                    return next(new AppError(err.message, 500));
+                }
+                const url = `https://9id.now.sh/verify?${token.token}`;
 
-            // Send Confirmation Email
-            sendMail({
-                from: '9 ID <no-reply-9id@gmail.com>',
-                email: newUser.email,
-                replyTo: 'no-reply-9id@gmail.com',
-                subject: 'Email Confirmation',
-                message: `<p>Please follow the <a href="${url}">link</a> to verify your email.</p>`
+
+                // Send Confirmation Email
+                sendMail({
+                    from: '9 ID <no-reply-9id@gmail.com>',
+                    email: newUser.email,
+                    replyTo: 'no-reply-9id@gmail.com',
+                    subject: 'Email Confirmation',
+                    message: `<p>Please follow the <a href="${url}">link</a> to verify your email.</p>`
+                }).then(()=>{
+                    res.status(201).json({
+                        status: 'success',
+                        message: 'User successfully created. Check for confirmation email',
+                        data: newUser
+                    })
+                }).catch(err=>{
+                    console.error(err.message)
+                    return next(new AppError(err.message, 500))
+                })
+                
             })
-            res.status(201).json({
-                status: 'success',
-                message: 'User successfully created. Check for confirmation email',
-                data: newUser
-            })
+            
         } catch(err) {
             next(err)
         }
     },
+
+
+
     resend_Email_Confirmation: async(req, res, next)=>{
 
         const user = await User.findById(req.params.id);
         if(!user.confirmed) {
-            const token = signToken(user._id);
-            const url = `https://9id.now.sh/verify?${token}`
-
+            // const token = signToken(user._id);
+            const token = await Token.findOne({user_ID:user._id});
+            const url = `https://9id.now.sh/verify?${token.token}`
 
             sendMail({
                 from: '9 ID <no-reply-9id@gmail.com>',
@@ -92,15 +106,14 @@ module.exports = {
                 message: `<p>Please follow the <a href="${url}">link</a> to verify your email.</p>`
             }).then(()=>res.status(200).json({status:'success',message:'confirmation mail resent'})).catch(err=>{
                 console.error('Error:', err);
-                return next(new AppError('Error sending confirmation email', 500));
+                return next(new AppError(err.message, 500));
             })
         } else {
             return next(new AppError('User has already been confirmed', 403));
         }
-        
-
-
     },
+
+
     confirm_User: async(req,res,next)=>{
         try {
             // Generate random password and hash
@@ -108,9 +121,12 @@ module.exports = {
             const password = auto_gen_password;
             const hashed_password = bcrypt.hashSync(password, 12);
 
-            // Verify user and change confirmation status
-            const {id} = jwt.verify(req.params.token, process.env.JWT_SECRET)
-            const user = await User.findByIdAndUpdate(id, {confirmed: true, password: hashed_password});
+            const token = await Token.findOne({token: req.params.token});
+            if (!token){
+                return next(new AppError('Unable to find a valid token. Token may have expired', 401));
+            }
+            
+            const user = await User.findByIdAndUpdate(token.user_ID, {confirmed: true, password: hashed_password});
             
             // Send user password to confirmed user email address
             sendMail({
@@ -134,6 +150,8 @@ module.exports = {
             next(err)
         }
     },
+
+
     login_user: async(req, res, next)=>{
         try{
             const user = await User.findOne({email: req.body.email});
