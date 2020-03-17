@@ -1,9 +1,13 @@
 const express = require('express');
 const user_Routes = require('./routes/user-routes');
 const AppError = require('./config/appError');
+const cors = require('cors');
 const errorHandler = require('./controllers/errorController');
 
 const app = express();
+
+app.use(cors());
+app.options('*', cors());
 
 app.use(express.json());
 
