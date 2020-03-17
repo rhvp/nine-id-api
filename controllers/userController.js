@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const sendMail = require('../config/nodemailer');
 const AppError = require('../config/appError');
 const bcrypt =  require('bcryptjs');
-const crypto = require('crypto-random-string');
+const crypto = require('crypto');
 const Token = require('../models/token');
 
 
@@ -54,8 +54,8 @@ module.exports = {
             
             // Create User
             const newUser = await User.create(userData);
-            // const token = signToken(newUser._id);
-            const token = new Token({user_ID: newUser._id, token: crypto({length: 16, type: 'base64'})});
+            const str = crypto.randomBytes(16).toString("hex");
+            const token = new Token({user_ID: newUser._id, token: str});
             token.save(err=>{
                 if(err){
                     return next(new AppError(err.message, 500));
@@ -116,21 +116,22 @@ module.exports = {
 
     confirm_User: async(req,res,next)=>{
         try {
-            // Generate random password and hash
-            const auto_gen_password = crypto({length: 10, type: 'base64'});
-            const password = auto_gen_password;
-            const hashed_password = bcrypt.hashSync(password, 12);
+            
 
             const token = await Token.findOne({token: req.params.token});
             if (!token){
                 return next(new AppError('Unable to find a valid token. Token may have expired', 401));
             }
             const id = token.user_ID
-            console.log(id)
             const user = await User.findById(id);
             
-            if(user){
+            if(!user.confirmed){
+                // Generate random password and hash
+                const auto_gen_password = crypto.randomBytes(16).toString("hex");
+                const password = auto_gen_password;
+                const hashed_password = bcrypt.hashSync(password, 12);
                 user.confirmed = true;
+                user.password = hashed_password;
                 user.save(err=>{
                     if(err){
                         console.error(err)
@@ -156,7 +157,7 @@ module.exports = {
                     })
                 })
             } else {
-                return next(new AppError('User not found.You might have an expired token', 404));
+                return next(new AppError('User has already been confirmed. Please check email for login credentials', 403));
             }
                                                                         
         } catch(err) {
