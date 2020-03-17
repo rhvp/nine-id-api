@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const AppError = require('./appError');
 
 const sendEmail = async options => {
     try {
@@ -30,7 +31,8 @@ const sendEmail = async options => {
         // 3) Actually send the email
         await transporter.sendMail(mailOptions);
     } catch(err) {
-        console.error('Error sending email:', err)
+        console.error('Error sending email:', err);
+        return new AppError('There was an error sending the mail', 501);
     }
     
   };
