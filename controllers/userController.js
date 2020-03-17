@@ -14,12 +14,13 @@ module.exports = {
 
     verify_User_SIM: async(req, res, next)=>{
         let phone = req.params.phone;
-        const user = await User.findOne({phone:phone});
+        const $phone = phone.replace(/0/i, '234');
+        const user = await User.findOne({phone:$phone});
         if(user){
             return next(new AppError('User has already signed up with this phone number', 403));
         }
             axios.request({
-                url: `https://telcostaging.9mobile.com.ng/1.0/subscribers/${phone}/registration`,
+                url: `https://telcostaging.9mobile.com.ng/1.0/subscribers/${$phone}/registration`,
                 method: 'GET',
                 headers: {
                     'Ocp-Apim-Subscription-Key': process.env.SIM_REG_KEY
