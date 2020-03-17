@@ -57,9 +57,7 @@ module.exports = {
             // Create User
             const newUser = await User.create(userData);
             const token = signToken(newUser._id);
-            const url = `${req.protocol}://${req.get(
-                "host"
-            )}/user/confirm/${token}`;
+            const url = `https://9id.now.sh/verify?${token}`;
 
             // Send Confirmation Email
             sendMail({
@@ -83,9 +81,7 @@ module.exports = {
         const user = await User.findById(req.params.id);
         if(!user.confirmed) {
             const token = signToken(user._id);
-            const url = `${req.protocol}://${req.get(
-                "host"
-            )}/user/confirm/${token}`
+            const url = `https://9id.now.sh/verify?${token}`
 
 
             sendMail({
