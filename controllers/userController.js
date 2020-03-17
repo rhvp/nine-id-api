@@ -33,7 +33,7 @@ module.exports = {
                 })
             }).catch(err=>{
                 console.error('Error:', err);
-                return next(new AppError('The requested phone number was not found. Please enter a correct 9-mobile number', 404))
+                return next(new AppError(`${err}. Please enter correct 9Mobile Number`, 404))
             })
     },
 
@@ -125,26 +125,39 @@ module.exports = {
             if (!token){
                 return next(new AppError('Unable to find a valid token. Token may have expired', 401));
             }
+            const id = token.user_ID
+            console.log(id)
+            const user = await User.findById(id);
             
-            const user = await User.findByIdAndUpdate(token.user_ID, {confirmed: true, password: hashed_password});
-            
-            // Send user password to confirmed user email address
-            sendMail({
-                from: '9 ID <no-reply-9id@gmail.com>',
-                email: user.email,
-                replyTo: 'no-reply-9id@gmail.com',
-                subject: '9-ID Login Credentials',
-                message: `<p>Your 9-ID login password is ${password}</p>`
-            }).then(()=>{
-                
-                res.status(200).json({
-                    status: 'success',
-                    message: 'Email confirmed. Check your email for your login credentials.'
+            if(user){
+                user.confirmed = true;
+                user.save(err=>{
+                    if(err){
+                        console.error(err)
+                        return next(new AppError(err.message, 500))
+                    }
+                    
+                     // Send user password to confirmed user email address
+                     sendMail({
+                        from: '9 ID <no-reply-9id@gmail.com>',
+                        email: user.email,
+                        replyTo: 'no-reply-9id@gmail.com',
+                        subject: '9-ID Login Credentials',
+                        message: `<p>Your 9-ID login password is ${password}</p>`
+                    }).then(()=>{
+                        
+                        res.status(200).json({
+                            status: 'success',
+                            message: 'Email confirmed. Check your email for your login credentials.'
+                        })
+                    }).catch(err=>{
+                        console.error('Error:', err);
+                        next(new AppError('There was an error sending login credentials. Please try again.', 500));
+                    })
                 })
-            }).catch(err=>{
-                console.error('Error:', err);
-                next(new AppError('There was an error sending login credentials. Please try again.', 500));
-            })
+            } else {
+                return next(new AppError('User not found.You might have an expired token', 404));
+            }
                                                                         
         } catch(err) {
             next(err)
