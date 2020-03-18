@@ -23,8 +23,8 @@ const sendEmail = async options => {
           to: options.email,
           subject: options.subject,
           replyTo: options.replyTo,
-          text: options.message
-          // html: options.message
+          // text: options.message
+          html: options.message
         };
       
         // 3) Actually send the email

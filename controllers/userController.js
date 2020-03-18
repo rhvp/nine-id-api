@@ -69,7 +69,7 @@ module.exports = {
                     email: newUser.email,
                     replyTo: 'no-reply-9id@gmail.com',
                     subject: 'Email Confirmation',
-                    message: url
+                    message: `<p>Follow this link to confirm your email ${url}</p>`
                 }).then(()=>{
                     res.status(201).json({
                         status: 'success',
@@ -103,7 +103,7 @@ module.exports = {
                 email: user.email,
                 replyTo: 'no-reply-9id@gmail.com',
                 subject: 'Email Confirmation',
-                message: url
+                message: `<p>Follow this link to confirm your email ${url}</p>`
             }).then(()=>res.status(200).json({status:'success',message:'confirmation mail resent'})).catch(err=>{
                 console.error('Error:', err);
                 return next(new AppError(err.message, 500));
@@ -127,7 +127,7 @@ module.exports = {
             
             if(!user.confirmed){
                 // Generate random password and hash
-                const auto_gen_password = crypto.randomBytes(16).toString("hex");
+                const auto_gen_password = crypto.randomBytes(7).toString("hex");
                 const password = auto_gen_password;
                 const hashed_password = bcrypt.hashSync(password, 12);
                 user.confirmed = true;
@@ -144,7 +144,12 @@ module.exports = {
                         email: user.email,
                         replyTo: 'no-reply-9id@gmail.com',
                         subject: '9-ID Login Credentials',
-                        message: `<p>Your 9-ID login password is ${password}</p>`
+                        message: `<p>Your 9-ID login credentials are;</p>
+                                    <ul>
+                                        <li>email: ${user.email}</li>
+                                        <li>password: ${password}</li>
+                                    </ul>
+                                    `
                     }).then(()=>{
                         
                         res.status(200).json({
