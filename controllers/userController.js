@@ -32,8 +32,11 @@ module.exports = {
                     }
                 })
             }).catch(err=>{
-                console.error('Error:', err);
-                return next(new AppError(`${err}. Please enter correct 9Mobile Number`, 404))
+                console.error('Error:', err.response.statusText, err.response.status);
+                if(err.response.status === 500){
+                    return next(new AppError(`${err.response.statusText}. Please try again later`, err.response.status));
+                }
+                return next(new AppError(`No registration details were found for entered number. Please ensure to enter correct 9Mobile number`, 404));
             })
     },
 
