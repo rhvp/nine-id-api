@@ -41,12 +41,14 @@ module.exports = {
     },
 
     signup_User: async (req, res, next)=>{
-        
+        let rand =  Date.now() + Math.floor(Math.random()*10000)
+        const e_id = rand.toString().substring(3) // ***review id generator
         const userData = {
             firstname: req.body.firstname,
             lastname: req.body.surname,
             email: req.body.email,
             phone: req.body.phone,
+            economic_ID: e_id
         }
         try {
             // Check if email is already registered

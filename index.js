@@ -1,5 +1,4 @@
 require('dotenv').config();
-
 const app = require('./app');
 const mongoose = require('./config/mongoose');
 process.on('uncaughtException', err => {
@@ -16,3 +15,4 @@ app.listen(port,()=>{
 process.on('unhandledRejection', err=>{
     console.log('Unhandled Rejection!!', err.name, err.message, err.stack);
 })
+

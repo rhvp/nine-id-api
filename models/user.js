@@ -20,6 +20,10 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Please enter your phone number'],
         unique: true
     },
+    created_by: {
+        type: String,
+        default: '9-id web'
+    },
     business_Name: {
         type: String
     },
@@ -29,13 +33,15 @@ const userSchema = new mongoose.Schema({
     business_Logo: {
         type: String
     },
-    business_ID: {
+    economic_ID: {
+        type: String,
+        unique: true,
+        required: true
+    },
+    address: {
         type: String
     },
-    business_address: {
-        type: String
-    },
-    webAddress:{
+    website:{
         type: String
     },
     password: {
