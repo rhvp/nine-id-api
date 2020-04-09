@@ -12,8 +12,8 @@ app.options('*', cors());
 
 app.use(express.json());
 
-app.use('/user', user_Routes);
-app.use(merchant_Routes);
+app.use('/api/user', user_Routes);
+app.use('/api', merchant_Routes);
 
 app.use((req, res, next)=>{
     let err = new AppError(`${req.ip} tried to reach a resource at ${req.originalUrl} that is not on this server.`, 404);
