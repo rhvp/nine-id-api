@@ -192,7 +192,8 @@ module.exports = {
             const correct_password = bcrypt.compareSync(req.body.password, user.password);
             if(correct_password){
                 let id = user._id;
-                const token = jwt.sign({id}, process.env.JWT_SECRET);
+                const token = jwt.sign({user}, process.env.JWT_SECRET);
+                await Token.create({user_ID: id, token: token});
                 const cookie_Options = {
                     expires: new Date(
                         Date.now() + 60 * 60 * 5
@@ -217,5 +218,32 @@ module.exports = {
         } catch(err){
             next(err)
         }
+    },
+
+    get_Profile: async(req, res, next)=>{
+        try {
+            const profile = await User.findById(req.params.id).populate('category').populate('services');
+            res.status(200).json({
+                status: 'success',
+                data: {profile}
+            })
+        } catch (error) {
+            next(error)
+        }
+    },
+
+    update_Profile: async(req, res, next)=>{
+        try {
+            const update = req.body; //**modify object as needed
+            const profile = await User.findByIdAndUpdate(req.params.id, update)
+            res.status(200).json({
+                status: 'success',
+                message: 'Profile successfully updated',
+                data: {profile}
+            })
+        } catch (error) {
+            next(error)
+        }
     }
+    
 }

@@ -28,7 +28,8 @@ const userSchema = new mongoose.Schema({
         type: String
     },
     business_Category: {
-        type: String
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'category'
     },
     business_Logo: {
         type: String
