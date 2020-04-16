@@ -1,13 +1,13 @@
 const axios = require('axios').default;
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
-const sendMail = require('../config/nodemailer');
 const AppError = require('../config/appError');
 const bcrypt =  require('bcryptjs');
 const crypto = require('crypto');
 const Token = require('../models/token');
+const sgMail = require('@sendgrid/mail');
 
-
+sgMail.setApiKey(process.env.SENDGRID_KEY);
 module.exports = {
 
     verify_User_SIM: async(req, res, next)=>{
@@ -40,6 +40,38 @@ module.exports = {
             })
     },
 
+    verify_User_BVN: async(req, res, next)=>{
+        let expected_body = {
+            firstname: req.body.firstname,
+            lastname: req.body.lastname,
+            phone: req.body.phone
+        }
+        const post_data = JSON.stringify(expected_body);
+
+        try {
+            const response = await axios.request({
+                url: `https://vapi.verifyme.ng/v1/identities/bvn/${req.body.bvn}/verifications`,
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${process.env.VERIFYME_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                data: post_data
+            })
+                User.findByIdAndUpdate(req.params.id, {bvn_Status: true}).then(()=>{
+                    res.status(200).json({
+                        status: 'success',
+                        message: 'BVN successfully verified',
+                        data: response.data
+                    })
+                }).catch(next);
+                
+        } catch (error) {
+            console.error(error.response.data);
+            return next(new AppError(error.response.data.message+' Please enter correct bvn', error.response.status));
+        }
+    },
+
     signup_User: async (req, res, next)=>{
         const userData = {
             firstname: req.body.firstname,
@@ -70,26 +102,27 @@ module.exports = {
                 if(err){
                     return next(new AppError(err.message, 500));
                 }
-                const url = `https://9id.now.sh/verify?token=${token.token}`;
+                const url = `https://9id.com.ng/verify?token=${token.token}`;
 
 
                 // Send Confirmation Email
-                sendMail({
-                    from: '9 ID <no-reply-9id@gmail.com>',
-                    email: newUser.email,
-                    replyTo: 'no-reply-9id@gmail.com',
+                const msg = {
+                    to: newUser.email,
+                    from: 'no-reply@9id.com.ng',
                     subject: 'Email Confirmation',
-                    message: `<p>Follow this link to confirm your email ${url}</p>`
-                }).then(()=>{
-                    res.status(201).json({
-                        status: 'success',
-                        message: 'User successfully created. Check for confirmation email',
-                        data: newUser
-                    })
-                }).catch(err=>{
-                    console.error(err.message)
-                    return next(new AppError(err.message, 500))
-                })
+                    html: `<p>Hello ${newUser.firstname},</p>
+                            <p>Follow this link to confirm your email ${url}</p>`,
+                  };
+                  sgMail.send(msg).then(()=>{
+                      res.status(201).json({
+                          status: 'success',
+                          message: 'User successfully created. Check for confirmation email',
+                          data: newUser
+                      })
+                    }).catch(err=>{
+                        console.error(err); 
+                        next(err);
+                  });
                 
             })
             
@@ -102,22 +135,35 @@ module.exports = {
 
     resend_Email_Confirmation: async(req, res, next)=>{
 
-        const user = await User.findById(req.params.id);
+        const user = await User.findOne({email: req.params.email});
+        if(!user) return next(new AppError('User not registered', 404));
         if(!user.confirmed) {
             // const token = signToken(user._id);
-            const token = await Token.findOne({user_ID:user._id});
-            const url = `https://9id.now.sh/verify?token=${token.token}`
+            let token = await Token.findOne({user_ID:user._id});
+            if(!token){
+                const str = crypto.randomBytes(16).toString("hex");
+                token = await Token.create({user_ID: user._id, token: str});
+            }
+            const url = `https://9id.com.ng/verify?token=${token.token}`
 
-            sendMail({
-                from: '9 ID <no-reply-9id@gmail.com>',
-                email: user.email,
-                replyTo: 'no-reply-9id@gmail.com',
+            const msg = {
+                to: user.email,
+                from: 'no-reply@9id.com.ng',
                 subject: 'Email Confirmation',
-                message: `<p>Follow this link to confirm your email ${url}</p>`
-            }).then(()=>res.status(200).json({status:'success',message:'confirmation mail resent'})).catch(err=>{
-                console.error('Error:', err);
-                return next(new AppError(err.message, 500));
-            })
+                html: `<p>Hello ${user.firstname},</p>
+                        <p>Follow this link to confirm your email ${url}</p>`,
+              };
+              sgMail.send(msg).then(()=>{
+                  res.status(200).json({
+                      status: 'success',
+                      message: 'Confirmation mail resent',
+                  })
+                }).catch(err=>{
+                    console.error(err);
+                    next(err);
+              });
+
+
         } else {
             return next(new AppError('User has already been confirmed', 403));
         }
@@ -137,39 +183,38 @@ module.exports = {
             
             if(!user.confirmed){
                 // Generate random password and hash
-                const auto_gen_password = crypto.randomBytes(7).toString("hex");
+                const auto_gen_password = crypto.randomBytes(5).toString("hex");
                 const password = auto_gen_password;
                 const hashed_password = bcrypt.hashSync(password, 12);
                 user.confirmed = true;
                 user.password = hashed_password;
                 user.save(err=>{
                     if(err){
-                        console.error(err)
                         return next(new AppError(err.message, 500))
                     }
                     
                      // Send user password to confirmed user email address
-                     sendMail({
-                        from: '9 ID <no-reply-9id@gmail.com>',
-                        email: user.email,
-                        replyTo: 'no-reply-9id@gmail.com',
-                        subject: '9-ID Login Credentials',
-                        message: `<p>Your 9-ID login credentials are;</p>
-                                    <ul>
-                                        <li>email: ${user.email}</li>
-                                        <li>password: ${password}</li>
-                                    </ul>
-                                    `
-                    }).then(()=>{
-                        
-                        res.status(200).json({
-                            status: 'success',
-                            message: 'Email confirmed. Check your email for your login credentials.'
-                        })
-                    }).catch(err=>{
-                        console.error('Error:', err);
-                        next(new AppError('There was an error sending login credentials. Please try again.', 500));
-                    })
+
+                    const msg = {
+                        to: user.email,
+                        from: 'no-reply@9id.com.ng',
+                        subject: 'Login Credentials',
+                        html: `<p>Hello ${user.firstname},</p>
+                                <p>Your 9-ID login credentials are;</p>
+                                <ul>
+                                    <li>Email: ${user.email}</li>
+                                    <li>Password: ${password}</li>
+                                </ul>`,
+                      };
+                      sgMail.send(msg).then(()=>{
+                          res.status(200).json({
+                              status: 'success',
+                              message: 'Email confirmed. Check your email for your login credentials',
+                          })
+                        }).catch(err=>{
+                            console.error(err);
+                            next(err);
+                      });
                 })
             } else {
                 return next(new AppError('User has already been confirmed. Please check email for login credentials', 403));
@@ -177,6 +222,32 @@ module.exports = {
                                                                         
         } catch(err) {
             next(err)
+        }
+    },
+
+    changePassword:async(req, res, next)=>{
+        try {
+            const id = req.params.id;
+            const oldPass = req.body.old_password;
+            const newPass = req.body.new_password;
+            const profile = await User.findById(id);
+            if(!profile) next(new AppError('User not found', 404));
+            const passwordCorrect = bcrypt.compareSync(oldPass, profile.password);
+            if(passwordCorrect){
+                const cryptPass = bcrypt.hashSync(newPass, 12);
+                profile.password = cryptPass
+                await profile.save(err=>{
+                    if(err) return next(new AppError(err.message,500))
+                });
+                res.status(200).json({
+                    status: 'success',
+                    message: 'Password changed'
+                })
+            } else {
+                return next(new AppError('Incorrect Old Password'));
+            }
+        } catch (error) {
+            next(error);
         }
     },
 

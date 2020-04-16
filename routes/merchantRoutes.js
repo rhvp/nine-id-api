@@ -7,4 +7,6 @@ router.get('/merchants', merchantController.get_Merchants)
 
 router.get('/merchant/:id', merchantController.get_Single_Merchant)
 
+router.get('/search/:searchQuery', merchantController.searchMerchantsByQuery)
+
 module.exports = router;

@@ -1,3 +1,4 @@
+const AppError = require('../config/appError');
 module.exports = (err, req, res, next)=>{
     
     console.error(err.name, err.message, err.stack);
@@ -42,6 +43,17 @@ module.exports = (err, req, res, next)=>{
                 }
             })
         }
+
+        if(err.code === 11000){
+            const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
+            res.status(403).json({
+                error: {
+                    title: 'Duplicate Field Error',
+                    message: `Duplicate field value:${value}. Please use another value and Try again`
+                }
+            })
+        }
+
 
         res.status(err.statusCode || 500).json({
             error: {

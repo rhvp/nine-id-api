@@ -30,5 +30,29 @@ module.exports = {
         } catch (error) {
             next(error)
         }
+    },
+
+    getMerchantsByCategory: async(req, res, next)=>{
+        try {
+            const merchants = await User.find({category: req.params.id});
+            res.status(200).json({
+                status: 'success',
+                data: {merchants}
+            })
+        } catch (error) {
+            next(error)
+        }
+    },
+
+    searchMerchantsByQuery: (req, res, next)=>{
+        try {
+            const response = User.find({$text:{$search:req.params.searchQuery}});
+            res.status(200).json({
+                status: 'success',
+                data: {response}
+            })
+        } catch (error) {
+            next(error)
+        }
     }
 }

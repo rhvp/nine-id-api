@@ -9,6 +9,14 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please enter your surname']
     },
+    bvn:{
+        type: String,
+        unique: true
+    },
+    bvn_Status: {
+        type: Boolean,
+        default: false
+    },
     email: {
         type: String,
         unique: true,
@@ -30,6 +38,9 @@ const userSchema = new mongoose.Schema({
     business_Category: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'category'
+    },
+    business_Services:{
+        type: String,
     },
     business_Logo: {
         type: String
@@ -72,7 +83,7 @@ const userSchema = new mongoose.Schema({
         }
     }
 }, {timestamps: true})
-
+userSchema.index({business_Name: 'text', business_Services: 'text', address: 'text'})
 const User = mongoose.model('user', userSchema);
 
 module.exports = User;

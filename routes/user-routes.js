@@ -12,9 +12,12 @@ router.post('/login', userController.login_user)
 
 router.get('/confirm/:token', userController.confirm_User)
 
-router.post('/confirm/resend/:id', userController.resend_Email_Confirmation)
+router.post('/confirm/resend/:email', userController.resend_Email_Confirmation)
 
-router.use(auth.userAuth)
+router.use(auth.userAuth);
+router.post('/verify/bvn/:id', userController.verify_User_BVN)
+router.post('/changePassword/:id', userController.changePassword)
+
 router.route('/profile/:id')
     .get(userController.get_Profile)
     .post(userController.update_Profile)
