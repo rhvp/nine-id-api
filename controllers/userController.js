@@ -58,7 +58,7 @@ module.exports = {
                 },
                 data: post_data
             })
-                User.findByIdAndUpdate(req.params.id, {bvn_Status: true}).then(()=>{
+                User.findByIdAndUpdate(req.params.id, {bvn_Status: true, bvn: req.body.bvn}).then(()=>{
                     res.status(200).json({
                         status: 'success',
                         message: 'BVN successfully verified',
