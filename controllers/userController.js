@@ -6,6 +6,7 @@ const bcrypt =  require('bcryptjs');
 const crypto = require('crypto');
 const Token = require('../models/token');
 const sgMail = require('@sendgrid/mail');
+const _ = require('underscore');
 
 sgMail.setApiKey(process.env.SENDGRID_KEY);
 module.exports = {
@@ -41,11 +42,7 @@ module.exports = {
     },
 
     verify_User_BVN: async(req, res, next)=>{
-        let expected_body = {
-            firstname: req.body.firstname,
-            lastname: req.body.lastname,
-            phone: req.body.phone
-        }
+        let expected_body = _.pick(req.body, ['firstname', 'lastname', 'phone']);
         const post_data = JSON.stringify(expected_body);
 
         try {
@@ -73,12 +70,8 @@ module.exports = {
     },
 
     signup_User: async (req, res, next)=>{
-        const userData = {
-            firstname: req.body.firstname,
-            lastname: req.body.surname,
-            email: req.body.email,
-            phone: req.body.phone,
-        }
+        const userData = _.pick(req.body, ['firstname', 'email', 'phone']);
+        userData.lastname = req.body.surname;
         if(req.body.economic_id && req.body.created_by){
             userData.economic_ID = req.body.economic_id
             userData.created_by = req.body.created_by
@@ -108,10 +101,13 @@ module.exports = {
                 // Send Confirmation Email
                 const msg = {
                     to: newUser.email,
-                    from: 'no-reply@9id.com.ng',
+                    from: '9ID no-reply@9id.com.ng',
                     subject: 'Email Confirmation',
                     html: `<p>Hello ${newUser.firstname},</p>
                             <p>Follow this link to confirm your email ${url}</p>`,
+                    text: `Hello ${newUser.firstname},
+                            Follow this link to confirm your email ${url}
+                            `
                   };
                   sgMail.send(msg).then(()=>{
                       res.status(201).json({
@@ -138,7 +134,6 @@ module.exports = {
         const user = await User.findOne({email: req.params.email});
         if(!user) return next(new AppError('User not registered', 404));
         if(!user.confirmed) {
-            // const token = signToken(user._id);
             let token = await Token.findOne({user_ID:user._id});
             if(!token){
                 const str = crypto.randomBytes(16).toString("hex");
@@ -197,14 +192,48 @@ module.exports = {
 
                     const msg = {
                         to: user.email,
-                        from: 'no-reply@9id.com.ng',
-                        subject: 'Login Credentials',
-                        html: `<p>Hello ${user.firstname},</p>
+                        from: '9ID <no-reply@9id.com.ng>',
+                        subject: 'Welcome To 9ID',
+                        html: `<p>Welcome ${user.firstname},</p>
+                                <br>
+                                <p>Thank you for signing up for the 9mobile economic Identity program. 9ID hosts a large 
+                                community of small businesses and service providers who are positioning their businesses 
+                                for growth. Our goal is to help businesses gain better visibility and credibility for their 
+                                business which is critical for business growth.</p>
+                                <p>We will provide you with a unique business ID Number that allows individuals to verify 
+                                the authenticity of your business, training courses for capacity development,  access to 
+                                reach our database of 9mobile subscribers to gain more visibility and ultimately access 
+                                to small loans with our partners at business friendly interest rates.</p>
+                                <br>
                                 <p>Your 9-ID login credentials are;</p>
                                 <ul>
                                     <li>Email: ${user.email}</li>
-                                    <li>Password: ${password}</li>
-                                </ul>`,
+                                    <li>Password: <b>${password}</b></li>
+                                </ul>
+                                <br>
+                                <br>
+                                <p>Best regards,</p>
+                                <p>The 9ID Empowerment Team.</p>`,
+
+                        text: `Welcome ${user.firstname},
+
+                                Thank you for signing up for the 9mobile economic Identity program. 9ID hosts a large 
+                                community of small businesses and service providers who are positioning their businesses 
+                                for growth. Our goal is to help businesses gain better visibility and credibility for their 
+                                business which is critical for business growth.
+
+                                We will provide you with a unique business ID Number that allows individuals to verify 
+                                the authenticity of your business, training courses for capacity development,  access to 
+                                reach our database of 9mobile subscribers to gain more visibility and ultimately access 
+                                to small loans with our partners at business friendly interest rates.
+
+                                Your 9-ID login credentials are;
+                                -Email: ${user.email}
+                                -Password: ${password}
+
+                                Best regards,
+                                The 9ID Empowerment Team.
+                                `
                       };
                       sgMail.send(msg).then(()=>{
                           res.status(200).json({
@@ -236,13 +265,13 @@ module.exports = {
             if(passwordCorrect){
                 const cryptPass = bcrypt.hashSync(newPass, 12);
                 profile.password = cryptPass
-                await profile.save(err=>{
-                    if(err) return next(new AppError(err.message,500))
+                profile.save(err=>{
+                    if(err) return next(new AppError(err.message,500));
+                    res.status(200).json({
+                        status: 'success',
+                        message: 'Password changed'
+                    })
                 });
-                res.status(200).json({
-                    status: 'success',
-                    message: 'Password changed'
-                })
             } else {
                 return next(new AppError('Incorrect Old Password'));
             }
