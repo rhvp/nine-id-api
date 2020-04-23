@@ -83,6 +83,8 @@ module.exports = {
         try {
             // Check if email is already registered
             const user = await User.findOne({email: req.body.email});
+            const phoneExists = await User.findOne({phone: userData.phone});
+            if(phoneExists) return next(new AppError('User with this phone number is already registered', 403));
             if(user){
                 return next(new AppError('User with this email is already registerd.', 403));
             }
