@@ -143,7 +143,7 @@ module.exports = {
 
             const msg = {
                 to: user.email,
-                from: 'no-reply@9id.com.ng',
+                from: '9ID <no-reply@9id.com.ng>',
                 subject: 'Email Confirmation',
                 html: `<p>Hello ${user.firstname},</p>
                         <p>Follow this link to confirm your email ${url}</p>`,
