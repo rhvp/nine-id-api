@@ -47,8 +47,7 @@ const userSchema = new mongoose.Schema({
     },
     economic_ID: {
         type: String,
-        unique: true,
-        required: true
+        unique: true
     },
     address: {
         type: String

@@ -14,10 +14,10 @@ module.exports = {
     verify_User_SIM: async(req, res, next)=>{
         let phone = req.params.phone;
         const $phone = phone.replace(/0/i, '234');
-        const user = await User.findOne({phone:phone});
-        if(user){
-            return next(new AppError('A user has already signed up with this phone number', 403));
-        }
+        // const user = await User.findOne({phone:phone});
+        // if(user){
+        //     return next(new AppError('A user has already signed up with this phone number', 403));
+        // }
             axios.request({
                 url: `https://telcostaging.9mobile.com.ng/1.0/subscribers/${$phone}/registration`,
                 method: 'GET',
@@ -70,23 +70,23 @@ module.exports = {
     },
 
     signup_User: async (req, res, next)=>{
-        const userData = _.pick(req.body, ['firstname', 'email', 'phone']);
-        userData.lastname = req.body.surname;
-        if(req.body.economic_id && req.body.created_by){
-            userData.economic_ID = req.body.economic_id
-            userData.created_by = req.body.created_by
-        } else {
-            let rand =  Date.now() + Math.floor(Math.random()*10000)
-            const e_id = rand.toString().substring(3) // ***review id generator
-            userData.economic_ID = e_id
-        }
+        
         try {
-            // Check if email is already registered
-            const user = await User.findOne({email: req.body.email});
-            const phoneExists = await User.findOne({phone: userData.phone});
+            // Check if email &/or phone is already registered
+            const userExists = await User.findOne({email: req.body.email});
+            const phoneExists = await User.findOne({phone: req.body.phone});
             if(phoneExists) return next(new AppError('User with this phone number is already registered', 403));
-            if(user){
+            if(userExists){
                 return next(new AppError('User with this email is already registerd.', 403));
+            }
+
+            const userData = _.pick(req.body, ['firstname', 'email', 'phone']);
+            userData.lastname = req.body.surname;
+
+            // Check for USSD API Request
+            if(req.body.economic_id && req.body.created_by){
+                userData.economic_ID = req.body.economic_id
+                userData.created_by = req.body.created_by
             }
             
             // Create User
@@ -179,6 +179,12 @@ module.exports = {
             const user = await User.findById(id);
             
             if(!user.confirmed){
+                // Generate unique economic ID
+                let rand =  Date.now() + Math.floor(Math.random()*10000)
+                const e_id = rand.toString().substring(3) // ***review id generator
+                user.economic_ID = e_id
+
+
                 // Generate random password and hash
                 const auto_gen_password = crypto.randomBytes(5).toString("hex");
                 const password = auto_gen_password;
@@ -310,12 +316,11 @@ module.exports = {
                 res.status(200).json({
                     status: 'success',
                     message: 'login successful',
-                    data: {
-                        user
-                    }
+                    data: user,
+                    token: token
                 })
             } else {
-                return next(new AppError(`Wrong password for ${req.body.email}`, 401))
+                return next(new AppError(`Wrong password entered`, 401));
             }
         } catch(err){
             next(err)
@@ -324,7 +329,7 @@ module.exports = {
 
     get_Profile: async(req, res, next)=>{
         try {
-            const profile = await User.findById(req.params.id).populate('category').populate('services');
+            const profile = await User.findById(req.params.id);
             res.status(200).json({
                 status: 'success',
                 data: {profile}
@@ -343,6 +348,15 @@ module.exports = {
                 message: 'Profile successfully updated',
                 data: {profile}
             })
+        } catch (error) {
+            next(error)
+        }
+    },
+
+    deleteUser: async(req, res, next)=>{
+        try {
+            await User.deleteOne({email: req.params.email});
+            res.status(204).end();
         } catch (error) {
             next(error)
         }
